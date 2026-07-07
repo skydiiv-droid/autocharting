@@ -41,7 +41,7 @@
   .q2{margin:0;}
 
   .grid{display:grid; grid-template-columns:1fr 1fr; gap:6px;}
-  .opt{border:1px solid var(--line); background:var(--panel); color:var(--ink); font-size:12.5px; font-weight:600; padding:11px 8px; border-radius:9px; cursor:pointer; text-align:center; line-height:1.25;}
+  .opt{border:1px solid var(--line); background:var(--panel); color:var(--ink); font-size:12px; font-weight:600; padding:10px 7px; border-radius:9px; cursor:pointer; text-align:center; line-height:1.25;}
   .opt:hover{border-color:var(--accent); color:var(--accent-ink);}
   .opt:active{background:var(--accent-soft); transform:scale(.98);}
 
@@ -58,7 +58,7 @@
   .nrs{width:52px; font-family:inherit; font-size:12.5px; text-align:center; color:var(--ink); border:1px solid var(--line); border-radius:7px; padding:5px 4px; background:var(--panel); outline:none;}
 
   .ctlrow{display:flex; align-items:center; gap:8px; margin-bottom:6px;}
-  .clbl{font-size:11px; color:var(--ink2); font-weight:700; min-width:46px;}
+  .clbl{font-size:11px; color:var(--ink2); font-weight:700; min-width:52px;}
   .clbl.sub{color:#8A97A2; font-weight:600; padding-left:6px;}
   .seggrp{display:flex; gap:4px; flex-wrap:wrap; flex:1;}
   .seg{border:1px solid var(--line); background:var(--panel); color:var(--ink); font-size:11.5px; font-weight:600; padding:5px 9px; border-radius:7px; cursor:pointer;}
@@ -68,7 +68,7 @@
   .chk{display:flex; align-items:center; gap:5px; font-size:12px; font-weight:600; color:var(--ink); cursor:pointer;}
   .chk input{width:15px; height:15px; accent-color:var(--accent); cursor:pointer; margin:0;}
   .exnote{font-size:10.5px; line-height:1.45; color:#9A6B10; background:#FBF5EC; padding:6px 8px; border-radius:7px; margin-bottom:9px;}
-  .out{width:100%; height:172px; resize:vertical; font-family:inherit; font-size:12.5px; line-height:1.5; color:var(--ink); border:1px solid var(--line); border-radius:9px; padding:9px 10px; background:#F8FAFB; outline:none;}
+  .out{width:100%; height:176px; resize:vertical; font-family:inherit; font-size:12.5px; line-height:1.5; color:var(--ink); border:1px solid var(--line); border-radius:9px; padding:9px 10px; background:#F8FAFB; outline:none;}
   .copy{width:100%; margin-top:8px; border:0; background:var(--accent); color:#fff; font-size:13.5px; font-weight:700; padding:11px; border-radius:10px; cursor:pointer; letter-spacing:.3px;}
   .copy:active{transform:scale(.99); background:#0B7566;}
 
@@ -83,42 +83,59 @@
 <div class="toast" id="toast"></div>
 
 <script>
-/* 과 → (OS)수술여부 · (NS spine)L/C-spine → 세부 → 결과
-   OS / NS spine 실제 루틴 반영. 그 외 과는 예시. */
+/* 과 → (OS)상지/하지→보조기 · (NS spine)L/C-spine→세부 → 결과 */
 
 const DEPTS=[{id:'OS',label:'OS'},{id:'NSs',label:'NS(spine)'},{id:'NSb',label:'NS(brain)'},{id:'GS',label:'GS'},{id:'URO',label:'URO'}];
 const SURG=[{id:'유',label:'유'},{id:'무',label:'무'}];
+const SIDES=['Lt','Rt','Both'];
 
-const SPLINT_SIDES=['Lt','Rt','Both'];
-const SPLINTS=[
-  {label:'short arm', abbr:'SAS',       region:'arm'},
-  {label:'long arm',  abbr:'LAS',       region:'arm'},
-  {label:'sugartong', abbr:'sugartong', region:'arm'},
-  {label:'short leg', abbr:'SLS',       region:'leg'},
-  {label:'long leg',  abbr:'LLS',       region:'leg'},
-  {label:'cylinder',  abbr:'cylinder',  region:'leg'},
-  {label:'hip dx',    abbr:'hip dx',    region:'leg'},
-  {label:'knee dx',   abbr:'knee dx',   region:'leg'},
-  {label:'HV dx',     abbr:'HV dx',     region:'leg'},
-];
+/* ── OS 보조기 (병원 리스트) ──
+   flags: sling(arm sling 체크박스) / castshoes(cast shoes 체크박스)
+          afinger(a-splint 손가락 Lt/Rt) / walkable(보행가능 → ADL 축소) */
+const OS_REGIONS=[{id:'arm',label:'상지'},{id:'leg',label:'하지'}];
+const BRACES={
+  arm:[
+    {label:'short arm',       abbr:'SAS',              sling:true},
+    {label:'long arm',        abbr:'LAS',              sling:true},
+    {label:'sugartong',       abbr:'sugartong',        sling:true},
+    {label:'ulnar gutter',    abbr:'ulnar gutter',     sling:true},
+    {label:'thumb spica',     abbr:'thumb spica',      sling:true},
+    {label:'radial gutter',   abbr:'radial gutter',    sling:true},
+    {label:'ultra sling',     abbr:'ultra sling'},
+    {label:'velpeau bandage', abbr:'velpeau bandage'},
+    {label:'8 shaped bandage',abbr:'8 shaped bandage'},
+    {label:'wrist brace',     abbr:'wrist brace'},
+    {label:'a-splint',        abbr:'a-splint',         afinger:true},
+  ],
+  leg:[
+    {label:'short leg', abbr:'SLS',        castshoes:true},
+    {label:'long leg',  abbr:'LLS',        castshoes:true},
+    {label:'cylinder',  abbr:'cylinder'},
+    {label:'ACL brace', abbr:'ACL brace'},
+    {label:'PCL brace', abbr:'PCL brace'},
+    {label:'MCL brace', abbr:'MCL brace'},
+    {label:'LCL brace', abbr:'LCL brace'},
+    {label:'knee dx',   abbr:'knee dx'},
+    {label:'hip dx',    abbr:'hip dx'},
+    {label:'foot dx',   abbr:'foot dx'},
+    {label:'HV shoes',  abbr:'HV shoes',   walkable:true},
+  ],
+};
 
 const SPINE_LEVELS=[{id:'L',label:'L-spine'},{id:'C',label:'C-spine'}];
 const SPINE_SUB_L=[{id:'OP',label:'OP'},{id:'fx',label:'fx'},{id:'pain',label:'Pain'}];
 const SPINE_SUB_C=[{id:'fx',label:'fx'},{id:'pain',label:'Pain'}];
-
 const OPS={NSb:['Craniotomy','VP shunt','Aneurysm clip','EVD','Burr hole'],GS:['충수절제술','담낭절제술(LC)','탈장교정술','대장절제술','위절제술','치핵절제술','갑상선절제술'],URO:['TURP','TURB','신절제술','PCNL','요관경(URS)']};
 const SITES={NSb:['뇌경색/뇌출혈','두부외상','뇌종양','기타'],GS:['상복부','하복부','항문','갑상선','유방'],URO:['신장','방광','전립선','요관']};
 
 const state={
   step:1, dept:null,
-  surg:null, side:null, splint:null, painLoc:'', item:null,
+  osRegion:null, osNone:false, brace:null, side:null, painLoc:'', aFingerLt:[], aFingerRt:[],
+  surg:null, item:null,
   spineLevel:null, subtype:null,
   duty:'D', nrs:'2',
-  mpLt:'', mpRt:'',
-  sTingling:false, sTinglingLt:false, sTinglingRt:false,
-  sNumbness:false, sNumbnessLt:false, sNumbnessRt:false,
-  mobility:'bed',
-  opts:{ starfix:false, o2:false, monitoring:false, pca:false, norspan:false, dpar:false },
+  mpLt:'', mpRt:'', sTingling:false, sTinglingLt:false, sTinglingRt:false, sNumbness:false, sNumbnessLt:false, sNumbnessRt:false, mobility:'bed',
+  opts:{ starfix:false, armSling:false, castShoes:false, o2:false, monitoring:false, pca:false, norspan:false, dpar:false },
 };
 
 const O2_LINE='O2 2L/min via n-p kept.';
@@ -127,50 +144,62 @@ const PCA_LINE='iv PCA dropping state.';
 const NORS_LINE='norspan patch 5mcg kept.';
 
 function deptLabel(id){ const d=DEPTS.find(x=>x.id===id); return d?d.label:id; }
-function splintInfo(label){ return SPLINTS.find(x=>x.label===label)||null; }
+function braceInfo(region,label){ return (BRACES[region]||[]).find(b=>b.label===label)||null; }
 function nrsTxt(){ return state.nrs.trim()?state.nrs.trim():'2'; }
-function resetResult(){   // 새 환자/과 진입 시 결과창 값 초기화
-  Object.assign(state,{nrs:'2',mpLt:'',mpRt:'',sTingling:false,sTinglingLt:false,sTinglingRt:false,sNumbness:false,sNumbnessLt:false,sNumbnessRt:false,mobility:'bed'});
-  state.opts={ starfix:false, o2:false, monitoring:false, pca:false, norspan:false, dpar:false };
+function pushExtras(L){ if(state.opts.o2)L.push(O2_LINE); if(state.opts.monitoring)L.push(MON_LINE); if(state.opts.pca)L.push(PCA_LINE); if(state.opts.norspan)L.push(NORS_LINE); }
+function resetResult(){
+  Object.assign(state,{nrs:'2',mpLt:'',mpRt:'',sTingling:false,sTinglingLt:false,sTinglingRt:false,sNumbness:false,sNumbnessLt:false,sNumbnessRt:false,mobility:'bed',aFingerLt:[],aFingerRt:[]});
+  state.opts={ starfix:false, armSling:false, castShoes:false, o2:false, monitoring:false, pca:false, norspan:false, dpar:false };
 }
-function adlLine(region){
-  const items = region==='arm' ? ['환의 교체','개인위생','식이섭취'] : ['환의 교체','개인위생','배변','배뇨','침상 밖 이동'];
-  return items.join(', ')+' 도움 줌.';
-}
-function pushExtras(L){
-  if(state.opts.o2) L.push(O2_LINE);
-  if(state.opts.monitoring) L.push(MON_LINE);
-  if(state.opts.pca) L.push(PCA_LINE);
-  if(state.opts.norspan) L.push(NORS_LINE);
+const ORD={1:'1st',2:'2nd',3:'3rd',4:'4th',5:'5th'};
+function fingerStr(arr){ return (!arr||!arr.length)?'':arr.slice().sort((a,b)=>a-b).map(n=>ORD[n]).join(', '); }
+
+/* ADL — 환의·개인위생 고정. 다리 OP: +배변/배뇨/이동, 팔 OP: +식이. none·HV shoes(보행): 고정만 */
+function osAdl(region,isNone,brace){
+  const base=['환의 교체','개인위생'];
+  if(isNone||brace==='HV shoes') return base.join(', ')+' 도움 줌.';
+  if(region==='arm') return base.concat(['식이섭취']).join(', ')+' 도움 줌.';
+  return base.concat(['배변','배뇨','침상 밖 이동']).join(', ')+' 도움 줌.';
 }
 
 /* ── OS ── */
 function composeOS(){
-  const {surg,side,splint,painLoc,opts}=state;
+  const {osRegion,osNone,brace,side,painLoc,opts}=state;
+  const distal = osRegion==='arm' ? 'finger' : 'toe';
+  const s = side ? side+' ' : '';
   const L=["Nr's rounded."];
-  if(surg==='유'){
-    const info=splintInfo(splint);
-    const region=info?info.region:'leg';
-    const abbr=info?info.abbr:(splint||'splint');
-    const s=side?side+' ':'';
-    const distal=region==='arm'?'finger':'toe';
-    const sf=opts.starfix?'starfix ':'';
-    L.push(`${s}${sf}${abbr} kept.`);
+
+  if(osNone){
+    L.push(`${s}${painLoc.trim()} pain NRS ${nrsTxt()} ck.`);
     if(opts.dpar){ L.push('정상 근골격계 기능 유지.'); L.push('SMC ck.'); }
-    L.push(`${s}${distal} SMC++ ck.`);
+    L.push(`${s}${distal} SMC+++ ck.`);
+    pushExtras(L);
+    L.push('처방된 수액 점적 중임.');
+    L.push(osAdl(osRegion,true,null));
+    L.push('불편감 알리도록 함.');
+  } else {
+    const info=braceInfo(osRegion,brace);
+    const abbr=info?info.abbr:(brace||'brace');
+    const sf=opts.starfix?'starfix ':'';
+    if(info&&info.afinger){
+      const parts=[];
+      const fl=fingerStr(state.aFingerLt); if(fl) parts.push(`Lt ${fl}`);
+      const fr=fingerStr(state.aFingerRt); if(fr) parts.push(`Rt ${fr}`);
+      const pf=parts.length?parts.join(', ')+' ':'';
+      L.push(`${pf}finger a-splint kept.`);      // ※ a-splint 표기 임시
+    } else {
+      L.push(`${s}${sf}${abbr} kept.`);
+    }
+    if(info&&info.sling&&opts.armSling)   L.push('arm sling apply.');   // ※ 문구 임시
+    if(info&&info.castshoes&&opts.castShoes) L.push('cast shoes apply.'); // ※ 문구 임시
+    if(opts.dpar){ L.push('정상 근골격계 기능 유지.'); L.push('SMC ck.'); }
+    L.push(`${s}${distal} SMC+++ ck.`);
     L.push('elevation & ice bag kept.');
     L.push(`OP site pain NRS ${nrsTxt()} ck.`);
     pushExtras(L);
     L.push('N/V none.');
     L.push('처방 수액 점적 중.');
-    L.push(adlLine(region));
-    L.push('불편감 알리도록 함.');
-  } else {
-    const loc=painLoc.trim()||'해당 부위';
-    L.push(`${loc} pain NRS ${nrsTxt()} 호소함.`);
-    pushExtras(L);
-    L.push('처방된 진통제 투여함.');
-    L.push('N/V none.');
+    L.push(osAdl(osRegion,false,brace));
     L.push('불편감 알리도록 함.');
   }
   return L.join('\n');
@@ -179,11 +208,11 @@ function composeOS(){
 /* ── NS spine ── */
 function sensoryLines(limb){
   const {sTingling,sTinglingLt,sTinglingRt,sNumbness,sNumbnessLt,sNumbnessRt}=state;
-  const side=(lt,rt)=> (lt&&rt)?'both':(lt?'Lt':(rt?'Rt':''));
+  const side=(lt,rt)=>(lt&&rt)?'both':(lt?'Lt':(rt?'Rt':''));
   const out=[];
-  if(sTingling){ const s=side(sTinglingLt,sTinglingRt); if(s) out.push(`${s} ${limb} tingling ck.`); }
-  if(sNumbness){ const s=side(sNumbnessLt,sNumbnessRt); if(s) out.push(`${s} ${limb} numbness ck.`); }
-  if(out.length===0) out.push(`both ${limb} sensory intact.`);
+  if(sTingling){ const x=side(sTinglingLt,sTinglingRt); if(x) out.push(`${x} ${limb} tingling ck.`); }
+  if(sNumbness){ const x=side(sNumbnessLt,sNumbnessRt); if(x) out.push(`${x} ${limb} numbness ck.`); }
+  if(!out.length) out.push(`both ${limb} sensory intact.`);
   return out;
 }
 function composeNSs(){
@@ -194,23 +223,17 @@ function composeNSs(){
   const L=["Nr's rounded."];
   if(subtype==='OP') L.push(`${site} OP site dx kept.`);
   else               L.push(`${site} pain NRS ${nrsTxt()} ck.`);
-  // motor 좌우 따로
   L.push(`Lt ${limb} M/P grade (${mpLt}) ck.`);
   L.push(`Rt ${limb} M/P grade (${mpRt}) ck.`);
-  // sensory
   sensoryLines(limb).forEach(x=>L.push(x));
-  // 거동
   const bed=subtype==='pain'?'BR':'ABR';
   if(mobility==='bed') L.push(`${bed} state.`);
   else if(mobility==='walker') L.push('Ambulated well with walker.');
-  else L.push(`Ambulated well with ${mobility}.`);   // TLSO / philadelphia collar / miami collar / vista brace
-  if(subtype==='OP'){
-    L.push(`OP site pain NRS ${nrsTxt()} ck.`);
-    pushExtras(L);
-    L.push('N/V none.');
-  } else pushExtras(L);
+  else L.push(`Ambulated well with ${mobility}.`);
+  if(subtype==='OP'){ L.push(`OP site pain NRS ${nrsTxt()} ck.`); pushExtras(L); L.push('N/V none.'); }
+  else pushExtras(L);
   L.push('처방 수액 점적 중.');
-  L.push(adlLine('leg'));
+  L.push(osAdl('leg',false,null));
   L.push('불편감 알리도록 함.');
   return L.join('\n');
 }
@@ -222,33 +245,26 @@ function composeGeneric(){
   if(surg==='유') L.push(`${item} 후 상태로 회복 중임.`);
   else            L.push(`${deptLabel(dept)} — ${item} 관련 보존적 치료 중임.`);
   L.push('간호사 순회함. V/S 측정함.');
-  if(opts.o2) L.push(O2_LINE);
-  if(opts.monitoring) L.push(MON_LINE);
+  if(opts.o2)L.push(O2_LINE); if(opts.monitoring)L.push(MON_LINE);
   if(surg==='유'){
     const m={NSb:['의식상태(GCS)·pupil reflex 사정함.','HOB 30° elevation 유지함.','seizure precaution 적용함.','EVD/drain 배액 확인함.'],GS:['OP site dressing 상태 확인함.','bowel sound·가스 배출 사정함.','JP drain 배액 양상 확인함.'],URO:['Foley(3-way) irrigation 중, 소변 색·양 관찰함.','hematuria 정도 사정함.']};
     (m[dept]||[]).forEach(x=>L.push(x));
   } else { L.push('증상 및 통증 양상 관찰함.'); L.push('처방된 약물 투여함.'); }
   L.push('');
-  L.push('처방된 수액 점적 중임.');
-  L.push('Pain 사정함.');
-  L.push('간호필요도 평가함 (환의·위생·배변배뇨·이동·식이 도움).');
+  L.push('처방된 수액 점적 중임.'); L.push('Pain 사정함.'); L.push('간호필요도 평가함 (환의·위생·배변배뇨·이동·식이 도움).');
   if(opts.dpar) L.push(`DPAR 시행함 (${duty} duty).`);
-  L.push('불편감 있을 시 알리도록 설명함.');
-  L.push('낙상 예방 교육함.');
-  L.push(`${duty} duty I/O 확인함.`);
+  L.push('불편감 있을 시 알리도록 설명함.'); L.push('낙상 예방 교육함.'); L.push(`${duty} duty I/O 확인함.`);
   return L.join('\n');
 }
 
-function compose(){
-  if(state.dept==='OS') return composeOS();
-  if(state.dept==='NSs') return composeNSs();
-  return composeGeneric();
-}
+function compose(){ if(state.dept==='OS')return composeOS(); if(state.dept==='NSs')return composeNSs(); return composeGeneric(); }
 
 /* ── views ── */
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function header(){ const back=state.step>1?`<button class="hbtn" data-act="home">처음</button>`:''; return `<div class="bar"><span class="htitle"><i class="hdot"></i>차팅 노트</span>${back}</div>`; }
-function grid(items,act){ return `<div class="grid">`+items.map(it=>`<button class="opt" data-act="${act}" data-id="${esc(it.id||it)}">${esc(it.label||it)}</button>`).join('')+`</div>`; }
+function grid(items,act){ return `<div class="grid">`+items.map(it=>{ const id=it.id||it.label||it, label=it.label||it; return `<button class="opt" data-act="${act}" data-id="${esc(id)}">${esc(label)}</button>`; }).join('')+`</div>`; }
+function sideBtns(){ return SIDES.map(x=>`<button class="sidebtn ${state.side===x?'on':''}" data-side="${x}">${x}</button>`).join(''); }
+
 function crumb(){
   const c=[];
   if(state.dept) c.push({lvl:1,txt:deptLabel(state.dept)});
@@ -256,9 +272,9 @@ function crumb(){
     if(state.spineLevel) c.push({lvl:2,txt:state.spineLevel==='L'?'L-spine':'C-spine'});
     if(state.subtype) c.push({lvl:3,txt:state.subtype});
   } else if(state.dept==='OS'){
-    if(state.surg) c.push({lvl:2,txt:state.surg});
-    if(state.surg==='유'&&state.splint){ const i=splintInfo(state.splint); c.push({lvl:3,txt:(state.side?state.side+' ':'')+(i?i.abbr:state.splint)}); }
-    else if(state.surg==='무'&&state.painLoc.trim()) c.push({lvl:3,txt:state.painLoc.trim()});
+    if(state.osRegion) c.push({lvl:2,txt:state.osRegion==='arm'?'상지':'하지'});
+    if(state.osNone&&state.painLoc.trim()) c.push({lvl:3,txt:(state.side?state.side+' ':'')+state.painLoc.trim()});
+    else if(state.brace){ const i=braceInfo(state.osRegion,state.brace); c.push({lvl:3,txt:(state.side?state.side+' ':'')+(i?i.abbr:state.brace)}); }
   } else if(state.dept){
     if(state.surg) c.push({lvl:2,txt:state.surg});
     if(state.item) c.push({lvl:3,txt:state.item});
@@ -269,14 +285,21 @@ function crumb(){
 
 function viewDept(){ return header()+`<div class="body"><div class="q">과 선택</div>${grid(DEPTS,'dept')}</div>`; }
 function viewSurg(){ return header()+`<div class="body">${crumb()}<div class="q">수술 여부</div>${grid(SURG,'surg')}</div>`; }
+function viewOSRegion(){ return header()+`<div class="body">${crumb()}<div class="q">부위</div>${grid(OS_REGIONS,'osregion')}</div>`; }
+function viewBraceOS(){
+  const noneChecked=state.osNone;
+  let inner=`<label class="chk" style="margin-bottom:10px"><input type="checkbox" id="osnone" ${noneChecked?'checked':''}>none (보조기 없음)</label>`;
+  inner+=`<div class="q">부위 (Lt / Rt / Both)</div><div class="siderow">${sideBtns()}</div>`;
+  if(noneChecked){
+    inner+=`<div class="q" style="margin-top:11px">통증 위치 입력</div><input class="txt" id="painin" placeholder="예: wrist, ankle" value="${esc(state.painLoc||'')}">`;
+    inner+=`<button class="copy" data-act="tonone" style="margin-top:10px">차팅 생성</button>`;
+  } else {
+    inner+=`<div class="q" style="margin-top:11px">보조기 선택</div>`+grid(BRACES[state.osRegion]||[],'brace');
+  }
+  return header()+`<div class="body">${crumb()}${inner}</div>`;
+}
 function viewSpineLevel(){ return header()+`<div class="body">${crumb()}<div class="q">spine level</div>${grid(SPINE_LEVELS,'spinelevel')}</div>`; }
 function viewSpineSub(){ const list=state.spineLevel==='C'?SPINE_SUB_C:SPINE_SUB_L; return header()+`<div class="body">${crumb()}<div class="q">유형</div>${grid(list,'subtype')}</div>`; }
-function viewSplintOS(){
-  const sides=SPLINT_SIDES.map(s=>`<button class="sidebtn ${state.side===s?'on':''}" data-side="${s}">${s}</button>`).join('');
-  const types=SPLINTS.map(sp=>`<button class="opt" data-splint="${esc(sp.label)}">${esc(sp.label)}</button>`).join('');
-  return header()+`<div class="body">${crumb()}<div class="q">부위 (Lt / Rt / Both)</div><div class="siderow">${sides}</div><div class="q" style="margin-top:11px">splint 종류</div><div class="grid">${types}</div></div>`;
-}
-function viewPainOS(){ return header()+`<div class="body">${crumb()}<div class="q">통증 위치 입력</div><input class="txt" id="painin" placeholder="예: Rt. 발목, Lt. 손목" value="${esc(state.painLoc||'')}"><button class="copy" data-act="topain" style="margin-top:10px">차팅 생성</button></div>`; }
 function viewItemList(){ const us=state.surg==='무'; const list=(us?SITES:OPS)[state.dept]||[]; return header()+`<div class="body">${crumb()}<div class="q">${us?'부위 선택':'OP 종류'}</div>${grid(list,'item')}</div>`; }
 
 function nssControls(){
@@ -288,32 +311,39 @@ function nssControls(){
     <div class="ctlrow"><span class="clbl">sensory</span><div class="seggrp">
       <button class="seg ${sTingling?'on':''}" data-symp="tingling">tingling</button>
       <button class="seg ${sNumbness?'on':''}" data-symp="numbness">numbness</button></div></div>`;
-  if(sTingling) s+=`<div class="ctlrow"><span class="clbl sub">└tingle</span><div class="seggrp">
-      <button class="seg ${sTinglingLt?'on':''}" data-tside="Lt">Lt</button>
-      <button class="seg ${sTinglingRt?'on':''}" data-tside="Rt">Rt</button></div></div>`;
-  if(sNumbness) s+=`<div class="ctlrow"><span class="clbl sub">└numb</span><div class="seggrp">
-      <button class="seg ${sNumbnessLt?'on':''}" data-nside="Lt">Lt</button>
-      <button class="seg ${sNumbnessRt?'on':''}" data-nside="Rt">Rt</button></div></div>`;
+  if(sTingling) s+=`<div class="ctlrow"><span class="clbl sub">└tingle</span><div class="seggrp"><button class="seg ${sTinglingLt?'on':''}" data-tside="Lt">Lt</button><button class="seg ${sTinglingRt?'on':''}" data-tside="Rt">Rt</button></div></div>`;
+  if(sNumbness) s+=`<div class="ctlrow"><span class="clbl sub">└numb</span><div class="seggrp"><button class="seg ${sNumbnessLt?'on':''}" data-nside="Lt">Lt</button><button class="seg ${sNumbnessRt?'on':''}" data-nside="Rt">Rt</button></div></div>`;
   const bedLbl=subtype==='pain'?'BR':'ABR';
   const braces=isC?[['philadelphia collar','philadelphia'],['miami collar','miami'],['vista brace','vista']]:[['TLSO','TLSO']];
   const mobList=[['bed',bedLbl],...braces,['walker','walker']];
-  const mobs=mobList.map(([k,l])=>`<button class="seg ${mobility===k?'on':''}" data-mob="${k}">${l}</button>`).join('');
-  s+=`<div class="ctlrow"><span class="clbl">거동</span><div class="seggrp">${mobs}</div></div>`;
+  s+=`<div class="ctlrow"><span class="clbl">거동</span><div class="seggrp">${mobList.map(([k,l])=>`<button class="seg ${mobility===k?'on':''}" data-mob="${k}">${l}</button>`).join('')}</div></div>`;
   return s;
+}
+function aFingerControls(){
+  const row=(arr,attr)=>[1,2,3,4,5].map(n=>`<button class="seg ${arr.includes(n)?'on':''}" data-${attr}="${n}">${n}</button>`).join('');
+  return `<div class="ctlrow"><span class="clbl">a-spl Lt</span><div class="seggrp">${row(state.aFingerLt,'aflt')}</div></div>
+    <div class="ctlrow"><span class="clbl">a-spl Rt</span><div class="seggrp">${row(state.aFingerRt,'afrt')}</div></div>`;
 }
 
 function viewResult(){
-  const {duty,opts,dept,nrs,surg}=state;
+  const {duty,opts,dept,nrs,osRegion,osNone,brace}=state;
   const isOS=dept==='OS', isNSs=dept==='NSs';
   const pills=['D','E','N'].map(d=>`<button class="dpill ${d===duty?'on':''}" data-duty="${d}">${d}</button>`).join('');
   const nrsField=(isOS||isNSs)?`<span class="q q2" style="margin-left:auto">NRS</span><input class="nrs" id="nrsin" inputmode="numeric" placeholder="2" value="${esc(nrs)}">`:'';
-  const extra=isNSs?nssControls():'';
-  let boxes;
+  let extra='', boxes;
   if(isOS){
-    boxes = surg==='유'
-      ? [['starfix','starfix'],['o2','O2'],['monitoring','monitoring'],['pca','PCA'],['norspan','norspan'],['dpar','DPAR']]
-      : [['o2','O2'],['monitoring','monitoring'],['pca','PCA'],['norspan','norspan']];
+    if(osNone){
+      boxes=[['o2','O2'],['monitoring','monitoring'],['pca','PCA'],['norspan','norspan'],['dpar','DPAR']];
+    } else {
+      const info=braceInfo(osRegion,brace);
+      boxes=[['starfix','starfix']];
+      if(info&&info.sling)    boxes.push(['armSling','arm sling']);
+      if(info&&info.castshoes)boxes.push(['castShoes','cast shoes']);
+      boxes=boxes.concat([['o2','O2'],['monitoring','monitoring'],['pca','PCA'],['norspan','norspan'],['dpar','DPAR']]);
+      if(info&&info.afinger) extra=aFingerControls();
+    }
   } else if(isNSs){
+    extra=nssControls();
     boxes=[['o2','O2'],['monitoring','monitoring'],['pca','PCA'],['norspan','norspan']];
   } else {
     boxes=[['o2','O2'],['monitoring','monitoring'],['dpar','DPAR']];
@@ -330,10 +360,10 @@ function viewResult(){
 
 function view(){
   if(state.step===1) return viewDept();
-  if(state.step===2) return state.dept==='NSs'?viewSpineLevel():viewSurg();
+  if(state.step===2) return state.dept==='NSs'?viewSpineLevel() : state.dept==='OS'?viewOSRegion() : viewSurg();
   if(state.step===3){
     if(state.dept==='NSs') return viewSpineSub();
-    if(state.dept==='OS') return state.surg==='유'?viewSplintOS():viewPainOS();
+    if(state.dept==='OS')  return viewBraceOS();
     return viewItemList();
   }
   return viewResult();
@@ -346,32 +376,37 @@ function bind(){
   app.querySelectorAll('[data-act]').forEach(b=>{
     b.onclick=()=>{
       const a=b.dataset.act;
-      if(a==='dept'){ state.dept=b.dataset.id; Object.assign(state,{surg:null,item:null,splint:null,side:null,painLoc:'',spineLevel:null,subtype:null,step:2}); resetResult(); }
-      else if(a==='surg'){ state.surg=b.dataset.id; Object.assign(state,{item:null,splint:null,side:null,painLoc:'',step:3}); }
+      if(a==='dept'){ state.dept=b.dataset.id; Object.assign(state,{osRegion:null,osNone:false,brace:null,side:null,painLoc:'',surg:null,item:null,spineLevel:null,subtype:null,step:2}); resetResult(); }
+      else if(a==='osregion'){ state.osRegion=b.dataset.id; Object.assign(state,{osNone:false,brace:null,side:null,painLoc:'',step:3}); resetResult(); }
+      else if(a==='brace'){ state.brace=b.dataset.id; state.opts.armSling=false; state.opts.castShoes=false; state.aFingerLt=[]; state.aFingerRt=[]; state.step=4; }
+      else if(a==='tonone'){ const p=document.getElementById('painin'); if(p) state.painLoc=p.value; state.step=4; }
+      else if(a==='surg'){ state.surg=b.dataset.id; Object.assign(state,{item:null,step:3}); }
       else if(a==='spinelevel'){ state.spineLevel=b.dataset.id; state.subtype=null; state.mobility='bed'; state.step=3; }
       else if(a==='subtype'){ state.subtype=b.dataset.id; state.step=4; }
       else if(a==='item'){ state.item=b.dataset.id; state.step=4; }
-      else if(a==='topain'){ const p=document.getElementById('painin'); if(p) state.painLoc=p.value; state.step=4; }
-      else if(a==='home'){ Object.assign(state,{step:1,dept:null,surg:null,item:null,splint:null,side:null,painLoc:'',spineLevel:null,subtype:null}); resetResult(); }
+      else if(a==='home'){ Object.assign(state,{step:1,dept:null,osRegion:null,osNone:false,brace:null,side:null,painLoc:'',surg:null,item:null,spineLevel:null,subtype:null}); resetResult(); }
       else if(a==='copy'){ copy(); return; }
       render();
     };
   });
   app.querySelectorAll('[data-side]').forEach(b=>{ b.onclick=()=>{ state.side=b.dataset.side; render(); }; });
-  app.querySelectorAll('[data-splint]').forEach(b=>{ b.onclick=()=>{ state.splint=b.dataset.splint; state.step=4; render(); }; });
+  const on=app.querySelector('#osnone'); if(on) on.onchange=()=>{ state.osNone=on.checked; render(); };
   app.querySelectorAll('[data-crumb]').forEach(b=>{
     b.onclick=()=>{ const lvl=+b.dataset.crumb; state.step=lvl;
-      if(lvl<3){ state.item=null; state.splint=null; state.side=null; state.painLoc=''; state.subtype=null; }
-      if(lvl<2){ state.surg=null; state.spineLevel=null; }
+      if(lvl<3){ state.brace=null; state.osNone=false; state.item=null; state.subtype=null; state.aFingerLt=[]; state.aFingerRt=[]; }
+      if(lvl<2){ state.osRegion=null; state.side=null; state.painLoc=''; state.surg=null; state.spineLevel=null; }
       render(); };
   });
   app.querySelectorAll('[data-duty]').forEach(b=>{ b.onclick=()=>{ state.duty=b.dataset.duty; render(); }; });
   app.querySelectorAll('[data-mplt]').forEach(b=>{ b.onclick=()=>{ state.mpLt=state.mpLt===b.dataset.mplt?'':b.dataset.mplt; render(); }; });
   app.querySelectorAll('[data-mprt]').forEach(b=>{ b.onclick=()=>{ state.mpRt=state.mpRt===b.dataset.mprt?'':b.dataset.mprt; render(); }; });
-  app.querySelectorAll('[data-symp]').forEach(b=>{ b.onclick=()=>{ const k=b.dataset.symp; if(k==='tingling') state.sTingling=!state.sTingling; else state.sNumbness=!state.sNumbness; render(); }; });
-  app.querySelectorAll('[data-tside]').forEach(b=>{ b.onclick=()=>{ const s=b.dataset.tside; if(s==='Lt') state.sTinglingLt=!state.sTinglingLt; else state.sTinglingRt=!state.sTinglingRt; render(); }; });
-  app.querySelectorAll('[data-nside]').forEach(b=>{ b.onclick=()=>{ const s=b.dataset.nside; if(s==='Lt') state.sNumbnessLt=!state.sNumbnessLt; else state.sNumbnessRt=!state.sNumbnessRt; render(); }; });
+  app.querySelectorAll('[data-symp]').forEach(b=>{ b.onclick=()=>{ const k=b.dataset.symp; if(k==='tingling')state.sTingling=!state.sTingling; else state.sNumbness=!state.sNumbness; render(); }; });
+  app.querySelectorAll('[data-tside]').forEach(b=>{ b.onclick=()=>{ const x=b.dataset.tside; if(x==='Lt')state.sTinglingLt=!state.sTinglingLt; else state.sTinglingRt=!state.sTinglingRt; render(); }; });
+  app.querySelectorAll('[data-nside]').forEach(b=>{ b.onclick=()=>{ const x=b.dataset.nside; if(x==='Lt')state.sNumbnessLt=!state.sNumbnessLt; else state.sNumbnessRt=!state.sNumbnessRt; render(); }; });
   app.querySelectorAll('[data-mob]').forEach(b=>{ b.onclick=()=>{ state.mobility=b.dataset.mob; render(); }; });
+  const tog=(arr,n)=>{ const i=arr.indexOf(n); if(i>=0)arr.splice(i,1); else arr.push(n); };
+  app.querySelectorAll('[data-aflt]').forEach(b=>{ b.onclick=()=>{ tog(state.aFingerLt,+b.dataset.aflt); render(); }; });
+  app.querySelectorAll('[data-afrt]').forEach(b=>{ b.onclick=()=>{ tog(state.aFingerRt,+b.dataset.afrt); render(); }; });
   app.querySelectorAll('[data-opt]').forEach(c=>{ c.onchange=()=>{ state.opts[c.dataset.opt]=c.checked; render(); }; });
   const pin=app.querySelector('#painin'); if(pin) pin.oninput=()=>{ state.painLoc=pin.value; };
   const nin=app.querySelector('#nrsin'); if(nin) nin.oninput=()=>{ state.nrs=nin.value; const o=document.getElementById('out'); if(o) o.value=compose(); };
@@ -387,9 +422,7 @@ render();
 </script>
 <script>
 /* PWA: 서비스 워커 등록 */
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
-}
+if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {})); }
 </script>
 </body>
 </html>
