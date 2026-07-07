@@ -1,5 +1,5 @@
 /* 차팅 노트 서비스 워커 — 오프라인 지원 + PWA 설치 가능 조건 충족 */
-const CACHE = 'charting-note-v1';
+const CACHE = 'charting-note-v2';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
